@@ -1,10 +1,9 @@
 .idea/
 target/
-auddl/
-viddl/
-modules/
+temp/
 artifacts/
 resources/
+config/
 *.json
 src/main/java/META-INF/MANIFEST.MF
 out/artifacts/bot_jar/bot.jar
@@ -14,3 +13,5 @@ out/artifacts/bot_jar/bot.jar
 *.jar
 logs/*
 start.sh
+data.csv
+src/main/resources/META-INF/MANIFEST.MF

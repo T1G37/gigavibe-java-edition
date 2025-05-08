@@ -1,43 +1,37 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 import Bots.lavaplayer.GuildMusicManager;
 import Bots.lavaplayer.PlayerManager;
 
-import static Bots.Main.*;
+import static Bots.Main.skipCountGuilds;
 
 public class CommandDisconnect extends BaseCommand {
     @Override
-    public void execute(MessageEvent event) {
-        if (!IsDJ(event.getGuild(), event.getChannel(), event.getMember())) {
-            return;
-        }
-        if (!event.getGuild().getAudioManager().isConnected()) {
-            event.replyEmbeds(createQuickError("I am not in a voice channel."));
-            return;
-        }
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_DJ, Check.IS_BOT_IN_ANY_VC};
+    }
+
+    @Override
+    public void execute(CommandEvent event) {
         final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(event.getGuild());
         musicManager.scheduler.queue.clear();
         event.getGuild().getAudioManager().closeAudioConnection();
         musicManager.scheduler.nextTrack();
-        event.replyEmbeds(createQuickEmbed(" ", "✅ Disconnected from the voice channel and cleared the queue."));
-        clearVotes(event.getGuild().getIdLong());
+        skipCountGuilds.remove(event.getGuild().getIdLong());
+        event.replyEmbeds(event.createQuickSuccess(event.localise("cmd.dc.disconnected")));
     }
 
     @Override
     public String[] getNames() {
-        return new String[]{"disconnect", "fu" + "ckoff", "fu" + "ck off", "shutup", "dc", "leave"};
+        return new String[]{"disconnect", "dc", "leave", "fu" + "ckoff", "fu" + "ck off", "shutup", "shut up"};
     }
 
     @Override
-    public String getCategory() {
-        return Categories.DJ.name();
-    }
-
-    @Override
-    public String getOptions() {
-        return "";
+    public Category getCategory() {
+        return Category.DJ;
     }
 
     @Override

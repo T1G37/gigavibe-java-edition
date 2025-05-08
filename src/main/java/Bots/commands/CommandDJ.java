@@ -1,7 +1,7 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
 import net.dv8tion.jda.api.EmbedBuilder;
 import net.dv8tion.jda.api.Permission;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
@@ -13,65 +13,69 @@ import org.json.simple.JSONObject;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
-import static Bots.Main.*;
+import static Bots.Main.botColour;
 
 public class CommandDJ extends BaseCommand {
+    Pattern mentionRegex = Pattern.compile("(?:<@&?)?(\\d+)>?");
 
     @Override
-    public void execute(MessageEvent event) {
+    public void execute(CommandEvent event) {
         JSONObject config = event.getConfig();
         JSONArray DJRoles = (JSONArray) config.get("DJRoles");
         JSONArray DJUsers = (JSONArray) config.get("DJUsers");
 
-        boolean isAdding = event.getArgs()[1].equalsIgnoreCase("add");
-        boolean isRemoving = event.getArgs()[1].equalsIgnoreCase("remove");
+        boolean isAdding = false;
+        boolean isRemoving = false;
+        if (event.getArgs().length != 1) {
+            isAdding = event.getArgs()[1].equalsIgnoreCase("add");
+            isRemoving = event.getArgs()[1].equalsIgnoreCase("remove");
+        }
 
-        if (event.getArgs()[1].equalsIgnoreCase("list")) { // list djs
+        if (event.getArgs().length == 1 || event.getArgs()[1].equalsIgnoreCase("list")) { // list djs
             EmbedBuilder eb = new EmbedBuilder();
             StringBuilder builder = new StringBuilder();
-            builder.append("**Roles:**\n"); // list DJ roles in embed
-            int i = 0;
-            if (DJRoles.size() == 0) {
-                builder.append("None.");
+            builder.append(event.localise("cmd.dj.roleList")); // list DJ roles in embed
+            if (DJRoles.isEmpty()) {
+                builder.append(event.localise("cmd.dj.roleListEmpty"));
             } else {
+                int i = 0;
                 for (Object role : DJRoles) {
                     i++;
-                    String mention = Objects.requireNonNull(event.getJDA().getRoleById((long) role)).getAsMention();
-                    if (i == DJRoles.size()) {
-                        builder.append(mention);
+                    if ((long) role == event.getGuild().getIdLong()) {
+                        builder.append("@everyone"); //edge-case fix
                     } else {
-                        builder.append(mention).append(", ");
+                        builder.append("<@&").append(role).append(">");
+                    }
+                    if (i != DJRoles.size()) {
+                        builder.append(", ");
                     }
                 }
             }
-            builder.append("\n\n**Users:**\n"); // list DJ users in embed
-            i = 0;
-            if (DJUsers.size() == 0) {
-                builder.append("None.");
+            builder.append(event.localise("cmd.dj.userList"));
+            if (DJUsers.isEmpty()) {
+                builder.append(event.localise("cmd.dj.roleListEmpty"));
             } else {
+                int i = 0;
                 for (Object user : DJUsers) {
                     i++;
-                    if (i == DJUsers.size()) {
-                        builder.append(Objects.requireNonNull(event.getJDA().getUserById((Long) user)).getAsMention());
-                    } else {
-                        builder.append(Objects.requireNonNull(event.getJDA().getUserById((Long) user)).getAsMention()).append(", ");
+                    builder.append("<@").append(user).append(">");
+                    if (i != DJUsers.size()) {
+                        builder.append(", ");
                     }
                 }
             }
             eb.setColor(botColour);
-            eb.setTitle("DJs for " + event.getGuild().getName());
+            eb.setTitle(String.format(event.localise("cmd.dj.guildDJs"), event.getGuild().getName()));
             eb.appendDescription(builder);
             event.replyEmbeds(eb.build());
         } else if (isAdding || isRemoving) { //Adding or Removing DJs. Shares similar functionality so we merge them initially
             if (!event.getMember().hasPermission(Permission.MESSAGE_MANAGE)) {
-                event.replyEmbeds(createQuickEmbed("❌ **Insufficient permissions**", "You do not have the permission to use this command."));
+                event.replyEmbeds(event.createQuickError(event.localise("main.noPermission")));
                 return;
             }
-            Pattern mentionRegex = Pattern.compile("(?:<@&?)?(\\d+)>?");
             List<Long> FoundMembers = new ArrayList<>();
             List<Long> FoundRoles = new ArrayList<>();
             for (int i = 2; i < event.getArgs().length; i++) {
@@ -81,42 +85,36 @@ public class CommandDJ extends BaseCommand {
                     long ID = Long.parseLong(matcher.group(1));
                     if (event.getGuild().getMemberById(ID) != null) {
                         FoundMembers.add(ID);
-                    } else {
-                        if (event.getGuild().getRoleById(ID) != null) {
-                            FoundRoles.add(ID);
-                        }
+                    } else if (event.getGuild().getRoleById(ID) != null) {
+                        FoundRoles.add(ID);
                     }
                 }
             }
             if (FoundMembers.size() + FoundRoles.size() == 0) {
-                event.replyEmbeds(createQuickError("No members or roles were specified."));
+                event.replyEmbeds(event.createQuickError(event.localise("cmd.dj.notGiven")));
                 return;
             }
-            if (isAdding) {
-                for (long member : FoundMembers) {
-                    if (!DJUsers.contains(member)) {
-                        DJUsers.add(member);
-                    }
-                }
-                for (long role : FoundRoles) {
-                    if (!DJRoles.contains(role)) {
-                        DJRoles.add(role);
-                    }
-                }
-            } else { // Removing instead
-                for (long member : FoundMembers) {
-                    DJUsers.remove(member);
-                }
-                for (long role : FoundRoles) {
-                    DJRoles.remove(role);
+
+            for (long member : FoundMembers) {
+                if (!DJUsers.contains(member)) {
+                    modifyDJ(GuildObjectType.member.ordinal(), member, isAdding, config);
                 }
             }
-            String memberText = FoundMembers.size() == 1 ? "member" : "members";
-            String roleText = FoundRoles.size() == 1 ? "role" : "roles";
+            for (long role : FoundRoles) {
+                if (!DJRoles.contains(role)) {
+                    modifyDJ(GuildObjectType.role.ordinal(), role, isAdding, config);
+                }
+            }
+            String memberText = FoundMembers.size() == 1 ?
+                    event.localise("cmd.dj.member") :
+                    event.localise("cmd.dj.member.plural");
+            String roleText = FoundRoles.size() == 1
+                    ? event.localise("cmd.dj.role") :
+                    event.localise("cmd.dj.role.plural");
             String msg;
-            if (FoundMembers.size() > 0) {
-                if (FoundRoles.size() > 0) {
-                    msg = String.format("%d %s and %d %s", FoundMembers.size(), memberText, FoundRoles.size(), roleText);
+            if (!FoundMembers.isEmpty()) {
+                if (!FoundRoles.isEmpty()) {
+                    msg = event.localise("cmd.dj.membersAndRoles", FoundMembers.size(), memberText, FoundRoles.size(), roleText);
                 } else {
                     msg = String.format("%d %s", FoundMembers.size(), memberText);
                 }
@@ -124,18 +122,36 @@ public class CommandDJ extends BaseCommand {
                 msg = String.format("%d %s", FoundRoles.size(), roleText);
             }
             if (isAdding) {
-                event.replyEmbeds(createQuickEmbed("✅ **Success**", "Added " + msg + " to the DJ list."));
+                event.replyEmbeds(event.createQuickSuccess(event.localise("cmd.dj.added", msg)));
             } else {
-                event.replyEmbeds(createQuickEmbed("✅ **Success**", "Removed " + msg + " from the DJ list."));
+                event.replyEmbeds(event.createQuickSuccess(event.localise("cmd.dj.removed", msg)));
             }
         } else {
-            event.replyEmbeds(createQuickError("Invalid arguments."));
+            event.replyEmbeds(event.createQuickError(event.localise("cmd.dj.invalidArgs")));
+        }
+    }
+
+    private synchronized void modifyDJ(int type, long id, boolean isAdding, JSONObject config) {
+        if (type == 0) { // role
+            JSONArray DJRoles = (JSONArray) config.get("DJRoles");
+            if (isAdding) { // is adding
+                DJRoles.add(id);
+            } else { // is removing
+                DJRoles.remove(id);
+            }
+        } else { // member
+            JSONArray DJUsers = (JSONArray) config.get("DJUsers");
+            if (isAdding) { // is adding
+                DJUsers.add(id);
+            } else { // is removing
+                DJUsers.remove(id);
+            }
         }
     }
 
     @Override
-    public String getCategory() {
-        return Categories.Admin.name();
+    public Category getCategory() {
+        return Category.Admin;
     }
 
     @Override
@@ -171,5 +187,9 @@ public class CommandDJ extends BaseCommand {
     @Override
     public long getRatelimit() {
         return 1000;
+    }
+
+    private enum GuildObjectType {
+        role, member
     }
 }

@@ -1,122 +1,146 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 import Bots.lavaplayer.PlayerManager;
 import com.sedmelluq.discord.lavaplayer.tools.FriendlyException;
-import net.dv8tion.jda.api.entities.GuildVoiceState;
 import net.dv8tion.jda.api.entities.Message;
-import net.dv8tion.jda.api.entities.channel.concrete.VoiceChannel;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.OptionData;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
-import net.dv8tion.jda.api.managers.AudioManager;
 
 import java.io.BufferedReader;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.net.URLConnection;
-import java.util.Arrays;
+import java.util.ArrayList;
 import java.util.List;
-import java.util.Objects;
-
-import static Bots.Main.*;
+import java.util.Set;
 
 public class CommandPlay extends BaseCommand {
-    final public String[] audioFiles = {"mp3", "mp4", "wav", "ogg", "flac", "mov", "wmv", "m4a", "aac", "webm", "opus", "m3u", "txt"};
+    final public Set<String> audioFiles = Set.of(
+            "mp3", "mp4", "wav", "ogg", "flac", "mov", "wmv", "m4a", "aac", "webm", "opus", "m3u", "txt"
+    );
+
+    private static boolean playFromTXT(CommandEvent event, boolean isAttachment) throws IOException {
+        URL url;
+        if (isAttachment) {
+            Message.Attachment att = event.getAttachments().get(0);
+            String fileExtension = att.getFileExtension() != null ? att.getFileExtension().toLowerCase() : "";
+            if (!fileExtension.equals("txt")) {
+                return false; // could be an actual audio file
+            }
+            url = new URL(att.getUrl());
+        } else {
+            String link = String.valueOf(event.getArgs()[1]);
+            if (!link.split("&")[0].split("\\?")[0].toLowerCase().endsWith(".txt")) { // could be an actual audio file
+                return false;
+            }
+            url = new URL(link);
+        }
+
+        URLConnection connection = url.openConnection();
+        BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
+
+        int actualListSize = 0;
+        ArrayList<String> finalURLs = new ArrayList<>();
+        try {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                if (line.isEmpty()) continue;
+                actualListSize++;
+                line = line.trim();
+                if (!line.startsWith("http")) {
+                    line = "ytsearch: " + line;
+                }
+                finalURLs.add(line);
+            }
+            if (!isAttachment && finalURLs.size() <= 2) return false;
+            for (String finalLine : finalURLs) {
+                PlayerManager.getInstance().loadAndPlay(event, finalLine.split("\\|", 2)[0].trim(), false);
+            }
+            event.replyEmbeds(event.createQuickSuccess(event.localise("cmd.play.queuedManySongs", actualListSize)));
+        } catch (Exception e) {
+            event.replyEmbeds(event.createQuickError(event.localise("cmd.play.fileError") + "\n```\n" + e.getMessage() + "\n```")); // tell the user what happened.
+        }
+        return true;
+    }
 
     @Override
-    public void execute(MessageEvent event) throws IOException {
-        if (IsChannelBlocked(event.getGuild(), event.getChannel())) {
-            return;
-        }
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_CHANNEL_BLOCKED, Check.TRY_JOIN_VC};
+    }
 
-        PlayerManager.message = event;
+    @Override
+    public void execute(CommandEvent event) throws IOException {
+        event.deferReply(); //expect to take a while
         String string = event.getContentRaw();
         String[] args = string.split(" ", 2);
-        final AudioManager audioManager = event.getGuild().getAudioManager();
-        GuildVoiceState memberState = Objects.requireNonNull(event.getMember()).getVoiceState();
-        GuildVoiceState selfState = Objects.requireNonNull(event.getGuild().getSelfMember().getVoiceState());
-        assert memberState != null;
-        final VoiceChannel memberChannel = (VoiceChannel) memberState.getChannel();
-        if (!memberState.inAudioChannel()) {
-            event.replyEmbeds(createQuickError("You aren't in a vc."));
-            return;
+
+        // figure out if there are actually attachments that can be played
+        List<Message.Attachment> attachments = event.getAttachments();
+        List<Message.Attachment> playableAttachments = new ArrayList<>();
+
+        for (Message.Attachment attachment : attachments) {
+            if (attachment.getFileExtension() != null && audioFiles.contains(attachment.getFileExtension().toLowerCase())) {
+                playableAttachments.add(attachment);
+            }
         }
 
-        if (!event.getAttachments().isEmpty() && Arrays.toString(audioFiles).contains(Objects.requireNonNull(event.getAttachments().get(0).getFileExtension()).toLowerCase())) {
-            // txt file custom playlists
-            if (Objects.requireNonNull(event.getAttachments().get(0).getFileExtension()).equalsIgnoreCase("txt")) {
-                audioManager.openAudioConnection(memberChannel);
-                URL url = new URL(event.getAttachments().get(0).getUrl());
-                URLConnection connection = url.openConnection();
-                BufferedReader reader = new BufferedReader(new InputStreamReader(connection.getInputStream()));
-                String line;
+        // play attachments
+        if (!playableAttachments.isEmpty()) {
+            Message.Attachment att = playableAttachments.get(0);
+            String fileExtension = att.getFileExtension() != null ? att.getFileExtension().toLowerCase() : "";
+
+            if (fileExtension.equals("txt")) {
+                playFromTXT(event, true);
+            } else {
                 try {
-                    while ((line = reader.readLine()) != null) {
-                        PlayerManager.getInstance().loadAndPlay(event.getChannel(), line.split(" ", 2)[0], false);
+                    if (playableAttachments.size() == 1) {
+                        PlayerManager.getInstance().loadAndPlay(event, playableAttachments.get(0).getUrl(), true);
+                    } else {
+                        for (Message.Attachment attachment : playableAttachments) {
+                            PlayerManager.getInstance().loadAndPlay(event, attachment.getUrl(), false);
+                        }
+                        event.replyEmbeds(event.createQuickSuccess(event.localise("cmd.play.queuedFromAtt", playableAttachments.size())));
                     }
-                    event.replyEmbeds(createQuickEmbed("✅ **Success**", "Queued **" + event.getAttachments().get(0).getFileName() + "**"));
+                } catch (Exception e) {
+                    event.replyEmbeds(event.createQuickError(event.localise("cmd.play.queuedFromAtt.error") + "\n```\n" + e.getMessage() + "\n```"));
+                }
+            }
+        } else { // no valid attachments to play, check for url/s in message content.
+            if (args.length < 2) {
+                // error for no valid attachments found
+                if (!attachments.isEmpty()) {
+                    event.replyEmbeds(event.createQuickError(event.localise("cmd.play.wrongFormat")));
                     return;
-                } catch (Exception ignored) {
-                    event.replyEmbeds(createQuickError("Something went wrong when loading the track."));
                 }
+                event.replyEmbeds(event.createQuickError(event.localise("cmd.play.noArgs")));
+                return;
             }
+            if (playFromTXT(event, false)) return;
+            // if playFromTXT fails, it tries to play the singular link.
 
-            // audio/video attachments
-            List<Message.Attachment> links = event.getAttachments();
-            audioManager.openAudioConnection(memberChannel);
-            boolean sendEmbedBool = true;
-            if (links.size() > 1) {
-                event.reply("Queued " + links.size() + " tracks from attachments.");
-            }
-            for (Message.Attachment attachment : links) {
-                try {
-                    PlayerManager.getInstance().loadAndPlay(event.getChannel(), attachment.getUrl(), sendEmbedBool);
-                    sendEmbedBool = false;
-                } catch (Exception ignored) {
-                    event.replyEmbeds(createQuickError("Something went wrong when loading the track."));
-                }
-            }
-            if (event.isSlash()) {
-                event.reply(MessageEvent.Response::delete, ".");
-            }
-            return;
-        }
-        String link;
-        try {
-            link = String.valueOf(args[1]);
-        } catch (Exception ignored) {
-            event.replyEmbeds(createQuickError("No arguments given."));
-            return;
-        }
-        if (link.contains("https://") || link.contains("http://")) {
-            if (link.contains("youtube.com/shorts/")) {
+            String link = String.valueOf(args[1]);
+            if (link.contains("https://") || link.contains("http://")) {
                 link = link.replace("youtube.com/shorts/", "youtube.com/watch?v=");
-            }
-            if (link.contains("youtu.be/")) {
                 link = link.replace("youtu.be/", "www.youtube.com/watch?v=");
+            } else {
+                link = "ytsearch: " + link;
             }
-        } else {
-            link = "ytsearch: " + link;
-        }
-        if (!selfState.inAudioChannel()) {
-            audioManager.openAudioConnection(memberChannel);
-        } else if (memberState.getChannel() != selfState.getChannel()) {
-            event.replyEmbeds(createQuickError("you arent in the same vc."));
-            return;
-        }
-        try {
-            PlayerManager.getInstance().loadAndPlay(event.getChannel(), link, true);
-        } catch (FriendlyException ignored) {
-            event.replyEmbeds(createQuickError("Something went wrong when decoding the track."));
+            try {
+                PlayerManager.getInstance().loadAndPlay(event, link, true);
+            } catch (FriendlyException e) {
+                event.replyEmbeds(event.createQuickError(event.localise("cmd.play.decodeError") + "\n```\n" + e.getMessage() + "\n```"));
+            }
         }
     }
 
     @Override
-    public String getCategory() {
-        return Categories.Music.name();
+    public Category getCategory() {
+        return Category.Music;
     }
 
     @Override
@@ -126,7 +150,7 @@ public class CommandPlay extends BaseCommand {
 
     @Override
     public String getDescription() {
-        return "Plays songs or playlists from many sources including yt, soundcloud spotify and discord/http urls.";
+        return "Plays songs and playlists from sources such as yt, soundcloud, spotify, and discord/http urls.";
     }
 
     @Override

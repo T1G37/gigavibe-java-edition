@@ -1,15 +1,15 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
 
 import static Bots.Main.createQuickEmbed;
 
 public class CommandPrivacyPolicy extends BaseCommand {
 
     @Override
-    public void execute(MessageEvent event) throws Exception {
-        event.replyEmbeds(createQuickEmbed("Privacy Policy", "https://github.com/ZeNyfh/gigavibe-java-edition/blob/main/PRIVACY_POLICY.md"));
+    public void execute(CommandEvent event) {
+        event.replyEmbeds(createQuickEmbed(event.localise("cmd.pp.privacyPolicy"), "https://github.com/ZeNyfh/Zenvibe/blob/main/PRIVACY_POLICY.md"));
     }
 
     @Override
@@ -18,8 +18,8 @@ public class CommandPrivacyPolicy extends BaseCommand {
     }
 
     @Override
-    public String getCategory() {
-        return Categories.General.name();
+    public Category getCategory() {
+        return Category.General;
     }
 
     @Override

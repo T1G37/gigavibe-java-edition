@@ -1,57 +1,63 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 import Bots.lavaplayer.GuildMusicManager;
 import Bots.lavaplayer.PlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrackInfo;
 import net.dv8tion.jda.api.EmbedBuilder;
-import net.dv8tion.jda.api.entities.GuildVoiceState;
-import net.dv8tion.jda.api.entities.Member;
 import net.dv8tion.jda.api.events.interaction.component.ButtonInteractionEvent;
 import net.dv8tion.jda.api.interactions.commands.OptionType;
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 import net.dv8tion.jda.api.interactions.components.buttons.Button;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
 import java.util.concurrent.BlockingQueue;
 
+import static Bots.LocaleManager.managerLocalise;
 import static Bots.Main.*;
-import static java.lang.Math.round;
 
 public class CommandQueue extends BaseCommand {
+    private static final Map<Long, Integer> queuePages = new HashMap<>();
+
     private void HandleButtonEvent(ButtonInteractionEvent event) {
-        BlockingQueue<AudioTrack> Queue = PlayerManager.getInstance().getMusicManager(Objects.requireNonNull(event.getGuild())).scheduler.queue;
+        final GuildMusicManager manager = PlayerManager.getInstance().getMusicManager(Objects.requireNonNull(event.getGuild()));
+        final BlockingQueue<AudioTrack> Queue = manager.scheduler.queue;
+        Map<String, String> lang = guildLocales.get(event.getGuild().getIdLong());
+        int newPageNumber = 1;
         if (Objects.equals(event.getButton().getId(), "forward")) {
-            queuePages.put(event.getGuild().getIdLong(), queuePages.get(event.getGuild().getIdLong()) + 1);
-            if (queuePages.get(event.getGuild().getIdLong()) >= round((Queue.size() / 5F) + 1)) {
-                queuePages.put(event.getGuild().getIdLong(), 1);
-            }
+            newPageNumber = queuePages.getOrDefault(event.getGuild().getIdLong(), 1) + 1;
         } else if (Objects.equals(event.getButton().getId(), "backward")) {
-            queuePages.put(event.getGuild().getIdLong(), queuePages.get(event.getGuild().getIdLong()) - 1);
-            if (queuePages.get(event.getGuild().getIdLong()) <= 0) {
-                queuePages.put(event.getGuild().getIdLong(), round((Queue.size() / 5F) + 1));
-            }
+            newPageNumber = queuePages.getOrDefault(event.getGuild().getIdLong(), 1) - 1;
         }
+        int maxPage = (Queue.size() + 4) / 5;
+        newPageNumber = Math.floorMod(newPageNumber - 1, maxPage) + 1; //wrap around (1-indexed)
+        queuePages.put(event.getGuild().getIdLong(), newPageNumber);
         long queueTimeLength = 0;
-        for (AudioTrack track : Queue) {
-            if (track.getInfo().length < 432000000) {
-                queueTimeLength = queueTimeLength + track.getInfo().length;
+        for (AudioTrack queueTrack : Queue) {
+            if (queueTrack.getInfo().length < 432000000) {
+                queueTimeLength = queueTimeLength + queueTrack.getInfo().length;
             }
         }
         EmbedBuilder eb = new EmbedBuilder();
-        for (int j = 5 * queuePages.get(event.getGuild().getIdLong()) - 5; j < 5 * queuePages.get(event.getGuild().getIdLong()) && j < Queue.size(); j++) {
+        for (int j = 5 * newPageNumber - 5; j < 5 * newPageNumber && j < Queue.size(); j++) {
             AudioTrackInfo trackInfo = Objects.requireNonNull(getTrackFromQueue(event.getGuild(), j)).getInfo();
             eb.appendDescription(j + 1 + ". [" + trackInfo.title + "](" + trackInfo.uri + ")\n");
         }
-        eb.setTitle("__**Now playing:**__\n" + PlayerManager.getInstance().getMusicManager(event.getGuild()).audioPlayer.getPlayingTrack().getInfo().title, PlayerManager.getInstance().getMusicManager(event.getGuild()).audioPlayer.getPlayingTrack().getInfo().uri);
-        eb.setFooter(Queue.size() + " songs queued. | " + round((Queue.size() / 5F) + 1) + " pages. | Length: " + toTimestamp(queueTimeLength));
+        final AudioTrack track = manager.audioPlayer.getPlayingTrack();
+        if (track == null) {
+            System.out.println("WARNING: No active song despite populated queue");
+        } else {
+            eb.setTitle(managerLocalise("cmd.q.nowPlaying", lang, track.getInfo().title), track.getInfo().uri);
+            if (PlayerManager.getInstance().getThumbURL(track) != null)
+                eb.setThumbnail(PlayerManager.getInstance().getThumbURL(track));
+        }
+        eb.setTitle(managerLocalise("cmd.q.nowPlaying", lang, Objects.requireNonNull(track).getInfo().title), track.getInfo().uri);
+        eb.setFooter(managerLocalise("cmd.q.queueInfoFooter", lang, Queue.size(), newPageNumber, maxPage, toTimestamp(queueTimeLength, event.getGuild().getIdLong())));
         eb.setColor(botColour);
-        eb.setThumbnail(PlayerManager.getInstance().getThumbURL(PlayerManager.getInstance().getMusicManager(event.getGuild()).audioPlayer.getPlayingTrack()));
         event.getInteraction().editMessageEmbeds(eb.build()).queue();
     }
 
@@ -61,60 +67,63 @@ public class CommandQueue extends BaseCommand {
     }
 
     @Override
-    public void execute(MessageEvent event) {
-        final Member self = event.getGuild().getSelfMember();
-        final GuildVoiceState selfVoiceState = self.getVoiceState();
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_BOT_IN_ANY_VC};
+    }
 
-        assert selfVoiceState != null;
-        if (!selfVoiceState.inAudioChannel()) {
-            event.replyEmbeds(createQuickError("Im not in a vc."));
-            return;
-        }
-        EmbedBuilder embed = new EmbedBuilder();
+    @Override
+    public void execute(CommandEvent event) {
         final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(event.getGuild());
         final AudioPlayer audioPlayer = musicManager.audioPlayer;
         List<AudioTrack> queue = new ArrayList<>(musicManager.scheduler.queue);
         if (queue.isEmpty()) {
-            event.replyEmbeds(createQuickError("The queue is empty."));
-            embed.clear();
+            event.replyEmbeds(event.createQuickError(event.localise("cmd.q.empty")));
             return;
         }
-        embed.setTitle("__**Now playing:**__\n" + audioPlayer.getPlayingTrack().getInfo().title, audioPlayer.getPlayingTrack().getInfo().uri);
+        EmbedBuilder embed = new EmbedBuilder();
+        AudioTrack track = audioPlayer.getPlayingTrack();
+
+        if (track == null) {
+            System.out.println("WARNING: No active song despite populated queue");
+        } else {
+            String title = track.getInfo().title;
+            if (track.getInfo().title == null) title = event.localise("cmd.q.unknownTitle");
+            embed.setTitle(event.localise("cmd.q.nowPlaying", title), track.getInfo().uri);
+        }
+
         int queueLength = queue.size();
         long queueTimeLength = 0;
-        for (int x = 0; x < queueLength; ) {
-            if (queue.get(x).getInfo().length > 432000000) {
-                x++;
+        for (AudioTrack audioTrack : queue) {
+            if (audioTrack.getInfo().length > 432000000) {
                 continue; // will be slightly inaccurate due to tracks with unknown duration
             }
-            queueTimeLength = queueTimeLength + queue.get(x).getInfo().length;
-            x++;
+            queueTimeLength = queueTimeLength + audioTrack.getInfo().length;
         }
-        queuePages.put(event.getGuild().getIdLong(), 1);
         String[] args = event.getArgs();
-        if (args.length == 2) {
+        int pageNumber = 1;
+        if (args.length >= 2) {
             if (args[1].equalsIgnoreCase("clear")) {
-                event.replyEmbeds(createQuickError("Did you mean to use **clearq**?"));
+                event.replyEmbeds(event.createQuickError(event.localise("cmd.q.didYouMean", "clearqueue")));
                 return;
             }
             if (!args[1].matches("^\\d+$")) {
-                event.replyEmbeds(createQuickError("Invalid arguments, integers only\nUsage: `<Integer> <URL/SearchTerm>`"));
+                event.replyEmbeds(event.createQuickError(event.localise("cmd.q.integerError")));
                 return;
             }
-            queuePages.put(event.getGuild().getIdLong(), Integer.parseInt(args[1]));
+            pageNumber = Math.max(Integer.parseInt(args[1]), 1); //page 0 is a bad idea
         }
-        int multiplier = queuePages.get(event.getGuild().getIdLong());
-        for (int i = 5 * multiplier - 5; i < 5 * multiplier && i < queueLength; ) {
+        queuePages.put(event.getGuild().getIdLong(), pageNumber);
+        for (int i = 5 * pageNumber - 5; i < 5 * pageNumber && i < queueLength; i++) {
             AudioTrackInfo trackInfo = queue.get(i).getInfo();
             embed.appendDescription(i + 1 + ". [" + trackInfo.title + "](" + trackInfo.uri + ")\n");
-            i++;
         }
-        embed.setFooter(queueLength + " songs queued. | " + round((queueLength / 5F) + 1) + " pages. | Length: " + toTimestamp(queueTimeLength));
+        String playbackLength = toTimestamp(queueTimeLength, event.getGuild().getIdLong());
+
+        embed.setFooter(event.localise("cmd.q.queueInfoFooter", queueLength, pageNumber, (queueLength + 4) / 5, playbackLength));
         embed.setColor(botColour);
-        embed.setThumbnail(PlayerManager.getInstance().getThumbURL(audioPlayer.getPlayingTrack()));
-        event.getChannel().sendMessageEmbeds(embed.build()).queue(
-                message -> message.editMessageComponents().setActionRow(Button.secondary("backward", "◀"), Button.secondary("forward", "▶")).queue()
-        );
+        if (track != null && PlayerManager.getInstance().getThumbURL(track) != null)
+            embed.setThumbnail(PlayerManager.getInstance().getThumbURL(track));
+        event.replyEmbeds(message -> message.setActionRow(Button.secondary("backward", "◀"), Button.secondary("forward", "▶")), embed.build());
     }
 
     @Override
@@ -123,8 +132,8 @@ public class CommandQueue extends BaseCommand {
     }
 
     @Override
-    public String getCategory() {
-        return Categories.Music.name();
+    public Category getCategory() {
+        return Category.Music;
     }
 
     @Override

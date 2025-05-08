@@ -1,0 +1,251 @@
+// Locale made by SharkRainstorm.
+// Any line starting with "//" will be ignored.
+// Any newlines will also be ignored.
+// Trailing spaces will be removed.
+// Use this english one as a template.
+// Comments can be added to the messages via a preceding //.
+// if you are unsure what {1}/{2}/{3}... is, check what the variables are within the code, they usually contain values, markdown, or both.
+// please preserve the capitalisation and any punctuation if applicable.
+
+cmd.ap.noAPI=Botten har ikke fået en API key til LastFM, denne kommando duer ikke uden den.
+cmd.ap.notAutoplaying=Autoplayer ikke musik.
+cmd.ap.isAutoplaying=Autoplayer musik.
+
+cmd.bc.invalidUsage=Den gyldige brug er: `{1} <kanal>` eller `{2}`
+cmd.bc.alreadyBlocked=Denne kanal er allerede blokeret.
+cmd.bc.notBlocked=Denne kanal er ikke blokeret.
+cmd.bc.added=Tilføjet <#{1}> til listen.
+cmd.bc.removed=Fjernede <#{1}> fra listen.
+cmd.bc.notFound=Denne kanal var ikke fundet på denne Discord server.
+cmd.bc.channelList=Blokeret kanaler for {1}:
+cmd.bc.noChannels=**Ingen**
+
+cmd.bug.noReport=Angiv venligst noget at rapportere.
+cmd.bug.successMessage=Tak for din fejlrapport!\nUdvikleren vil kontakte dig via botens DM'er.\nBrug kommandoen **{1}** til at svare på beskeder.\n
+
+cmd.cq.cleared=Ryddede køen.
+
+cmd.dc.disconnected=Forlod kanalen og ryddet køen.
+
+cmd.dj.roleList=**Roller**:\n
+cmd.dj.roleListEmpty=Ingen.
+cmd.dj.userList=\n\n**Brugere:**\n
+cmd.dj.guildDJs=DJs for {1}
+cmd.dj.notGiven=Ingen medlemmer eller roller blev angivet.
+cmd.dj.member=medlem
+cmd.dj.member.plural=medlemmer
+cmd.dj.role=rolle
+cmd.dj.role.plural=roller
+cmd.dj.membersAndRoles={1} {2} og {3} {4}
+cmd.dj.added=Tilføjet {1} til DJ-listen.
+cmd.dj.removed=Fjernet {1} fra DJ-listen.
+cmd.dj.invalidArgs=Ugyldige argumenter.
+
+cmd.fs.failedToFind=Autoplay kunne ikke finde {1}\n
+cmd.fs.couldNotFind=Autoplay kunne ikke finde lignende numre.\n
+cmd.fs.nullSearchTerm=Der opstod en ukendt fejl under forsøg på autoplay.\n
+cmd.fs.autoplayQueued=Autoplay i kø: {1} - {2}
+cmd.fs.skippedQueue=Sprang over hele køen.
+cmd.fs.skippedToPos=Sprang {1} numre over til {2}.
+cmd.fs.skippedToTrack=Sprang det nuværende nummer over til {1}.
+cmd.fs.skipped=Sprang det nuværende nummer over.
+
+cmd.git.message=❕ Brug dette KUN til fejlrapporter og funktionsforslag.\n\n❕ Når du opretter en fejlrapport, skal du angive, hvad fejlen er, og hvordan den kan genskabes.\nhttps://github.com/ZeNyfh/Ze v
+
+cmd.help.cat.general=📖 **Generel**
+cmd.help.cat.music=🔊 **Musik**
+cmd.help.cat.DJ=🎧 **DJ**
+cmd.help.cat.admin=📑 **Admin**
+cmd.help.cat.dev=🔨 **Udvikler**
+cmd.help.alias=\n`Alias:`
+cmd.help.alias.plural=\n`Aliaser:`
+cmd.help.originalFooter=Klik på knapperne for at få flere oplysninger om en gruppe.
+cmd.help.footer=Syntaks: "<>" er et påkrævet argument, "[]" er et valgfrit argument. "()" er et alternativt ord for kommandoen.
+cmd.help.embedTitle=📔 **Kommandoer**
+
+cmd.info.info={1} Info
+cmd.info.ramUsage=🔧 **RAM-forbrug:** {1}MB\n\n
+cmd.info.upTime=⏰ **Oppetid:** {1}\n\n
+cmd.info.discordServers=📡 **Servere:** {1}\n\n
+cmd.info.discordMembers=👤 **Brugere:** {1}\n\n
+cmd.info.registeredCommands=📑 **Registrerede kommandoer:** {1}\n\n
+cmd.info.voiceChannels=🎵 **Stemmekanaler:** {1}\n\n
+cmd.info.playingCount=🔊 **Aktive afspilninger:** {1}\n\n
+cmd.info.gatewayPing=⏱️ **Gateway-ping:** {1}ms\n\n
+cmd.info.version=Version: {1}
+cmd.info.ping=**Ping:** {1}ms\n\n
+
+cmd.ins.notEnoughArgs=Ikke nok argumenter angivet.\nBrug: <Heltal> <URL/Søgeudtryk>
+cmd.ins.invalidArgs=Ugyldige argumenter, kun heltal.\nBrug: <Heltal> <URL/Søgeudtryk>
+cmd.ins.decodingError=Noget gik galt under afkodningen af nummeret.
+cmd.ins.addedToPos=Tilføjet nummeret på position: **{1}**
+cmd.ins.queueError=Der opstod en fejl under tilføjelse af nummeret til køen: {1}
+
+cmd.inv.haveFun=God fornøjelse!
+
+cmd.join.noAccess=Botten har ikke adgang til din kanal.
+cmd.join.joined=Botten sluttede sig til din stemmekanal.
+cmd.join.botAlreadyInVC=Botten er allerede i stemmekanalen.
+
+cmd.loc.list=Liste af sprog:
+cmd.loc.languageChanged=Sproget blev ændret til: {1}
+
+cmd.loop.notLooping=Gentager ikke længere det nuværende nummer.
+cmd.loop.looping=Gentager nu det nuværende nummer.
+
+cmd.lq.notLooping=Gentager ikke længere den nuværende kø.
+cmd.lq.looping=Gentager nu den nuværende kø.
+
+cmd.lyr.notFound=Ingen resultater fundet, eller sangtitlen var ukendt.
+cmd.lyr.source=Tekst hentet fra lrclib.net
+cmd.lyr.lyricsForTrack=Tekst til: {1}
+cmd.lyr.tooLong=Teksten var for lang, den uploades som en fil.
+
+cmd.np.livestreamDuration=```Livestream varighed {1}```
+cmd.np.channel=👤 Kanal:
+cmd.np.next=▶️ Næste:
+cmd.np.paused=⏸️ Nummer på pause:
+cmd.np.true=✅ **Sandt**
+cmd.np.false=❌ **Falsk**
+cmd.np.trackLooping=🔂 Nummer gentages:
+cmd.np.queueLooping=🔁 Kø gentages:
+cmd.np.autoplaying=♾️ Autoplay:
+
+cmd.pause.resumed=Afspilningen er genoptaget.
+cmd.pause.paused=Afspilningen er sat på pause.
+
+cmd.ping.ping=ping: {1}ms
+cmd.ping.gatewayPing=gateway-ping: {1}ms
+
+cmd.pitch.defaulted=Tonehøjden er sat tilbage til 1.
+cmd.pitch.range=Tonehøjden skal være mellem 0,25 og 5.
+cmd.pitch.changed=Tonehøjden for nummeret er sat til {1}x.
+
+cmd.play.queuedFromAtt=Tilføjet {1} numre fra vedhæftede filer til køen.
+cmd.play.queuedFromAtt.error=Noget gik galt under indlæsning af numre fra vedhæftede filer.
+cmd.play.wrongFormat=Nummeret kunne ikke indlæses: Ukendt filformat.
+cmd.play.noArgs=Ingen argumenter angivet.
+cmd.play.decodeError=Noget gik galt under afkodningen af nummeret.
+cmd.play.queuedManySongs=Tilføjet {1} numre til køen!
+cmd.play.fileError=Noget gik galt under indlæsning af numre fra filen.
+
+cmd.pp.privacyPolicy=Privatlivspolitik
+
+cmd.q.nowPlaying=__**Spiller nu:**__\n{1}
+cmd.q.queueInfoFooter={1} numre i kø | Side {2}/{3} | Længde: {4}
+cmd.q.empty=Køen er tom.
+cmd.q.unknownTitle=Ukendt titel
+cmd.q.didYouMean=Mente du at bruge **{1}**?
+cmd.q.integerError=Siden skal være et positivt heltal.
+
+cmd.radio.list=📻 **Radiokanaler:**\n\n
+cmd.radio.alternativeList=*Eller brug `{1} {2} <Tekst>`*
+cmd.radio.useForPlay=Brug "{1} {2} <Radiokanal>" for at afspille en radiokanal.
+cmd.radio.noArgsList=Ingen argumenter angivet, her er nogle radiokanaler at vælge imellem:
+cmd.radio.noSearchTerm=Intet søgeord angivet.
+cmd.radio.notFound=Kunne ikke finde en radiokanal med det givne navn.
+cmd.radio.queued=Radiokanal i kø:
+cmd.radio.invalid=Ugyldig radiokanal.
+
+cmd.rem.noSongs=Der er ingen sange på listen, der kan fjernes.
+cmd.rem.invalidArgs=Ugyldige argumenter, kun heltal.
+cmd.rem.tooLarge=Det angivet tal er større end køens længde.
+cmd.rem.removed=Fjernede nummer {1} fra køen.
+
+cmd.seek.invalidArg=Argumentet er ugyldigt, brug formatet `[TIMER]:[MINUTTER]:<SEKUNDER>`
+cmd.seek.timeTooLow=Den angivne tid er mindre end eller lig med 0.
+cmd.seek.setPos=Indstillede nummerets position til: **{1}**.
+cmd.seek.cannotSeek=Du kan ikke spole i dette nummer.
+cmd.seek.noArg=Intet argument angivet.
+
+cmd.shuffle.emptyQueue=Der er intet i køen.
+cmd.shuffle.shuffled=Blandede køen!
+
+cmd.skip.alreadyVoted=Du har allerede stemt for at springe over.
+cmd.skip.failedToFind=Autoplay kunne ikke finde {1}
+cmd.skip.couldNotFind=Autoplay kunne ikke finde lignende numre.\n
+cmd.skip.noSearchTerm=Der opstod en ukendt fejl under forsøg på autoplay.
+cmd.skip.autoplayQueued=Autoplay i kø: __**{1} - {2}**__
+cmd.skip.skippedTheTrack=⏩ Sprang nummeret over.
+cmd.skip.skippedTo=⏩ Sprang over til __**{1}**__
+cmd.skip.skippedTo.unknown=⏩ Sprang over til __**Ukendt titel**__
+cmd.skip.nowPlaying=Spiller nu: {1}
+cmd.skip.voted.title=Stemte for at springe over nummeret.
+cmd.skip.voted.description={1} ud af {2} stemmer nødvendige for at springe over.
+cmd.skip.channel=**Kanal**\n{1}\n
+cmd.skip.duration=**Varighed**\n{1}
+
+cmd.speed.defaulted=Afspilningshastigheden er sat tilbage til 1.
+cmd.speed.rangeError=Hastigheden skal være mellem 0,2 og 5.
+cmd.speed.success=Indstillede afspilningshastigheden til {1}x.
+
+cmd.tos.TermsOfService=Servicevilkår
+
+cmd.vib.defaulted=Parametrene er sat tilbage til standardværdier.
+cmd.vib.incorrectArgs=Den korrekte brug er: `{1} <Frekvens> <Dybde>`
+cmd.vib.range.frequency=Frekvensen skal være mellem 0,1 og 14.
+cmd.vib.range.depth=Dybden skal være mellem 0,05 og 1.
+cmd.vib.success=Indstillede vibratofrekvensen til {1}Hz.\nIndstillede vibratodybden til {2}.
+cmd.vib.invalidArgs=❌ **Ugyldige argumenter.**
+
+cmd.vol.defaulted=Lydstyrken er sat tilbage til standardværdien på 100.
+cmd.vol.incorrectArg=Lydstyrken skal være et heltal.
+cmd.vol.tooHigh=Lydstyrken kan ikke være højere end 500.
+cmd.vol.tooLow=Lydstyrken kan ikke være lavere end 0.
+cmd.vol.success=Ændrede lydstyrken til {1}.
+cmd.vol.invalidValue=Ugyldig værdi.
+
+statecheck.notAllowed=❌ **Ikke tilladt**
+
+statecheck.notInVC=Du er ikke i en stemmekanal.
+statecheck.botNotInVC=Botten er ikke i en stemmekanal.
+statecheck.botNotInYourVC=Botten er ikke i din stemmekanal.
+statecheck.botBusy=Botten er allerede optaget i en anden stemmekanal.
+statecheck.cannotJoin=Botten kan ikke tilslutte sig denne stemmekanal.
+statecheck.noDJ=Du har ikke DJ-tilladelser.
+statecheck.commandBlocked=Denne kommando er blokeret i denne kanal.
+statecheck.isNotPlaying=Botten spiller ikke noget i øjeblikket.
+statecheck.devOnly=Denne kommando er kun for udviklere.
+
+pmanager.noSpotify=Botten kan ikke afspille Spotify-numre lige nu.
+pmanager.playlistQueued=Størrelse: **{1}** numre.\nLængde: **{2}**\n\n
+pmanager.APIError=Der opstod en fejl med YouTubes søge-API.
+pmanager.loadFailed=Nummeret kunne ikke indlæses: {1}
+pmanager.noMatches=Der blev ikke fundet noget lignende for dette nummer.
+pmanager.duration=Kanal: `{1}`\n
+pmanager.channel=Varighed: `{1}`
+
+tsched.autoplay.notFound=Autoplay kunne ikke finde {1}
+tsched.autoplay.noSimilar=Autoplay kunne ikke finde lignende numre.\n
+tsched.autoplay.unknownError=Der opstod en ukendt fejl under forsøg på autoplay.\n
+tsched.queued=♾️ Autoplay i kø:
+
+tsched.regfail=Nummeret kunne ikke indlæses af ukendte årsager. Springer over...
+
+tsched.critfail.title=❌ Kritisk fejl
+tsched.critfail.description=Nummeret kunne ikke indlæses 3 gange, sandsynligvis på grund af et netværksproblem uden for vores kontrol. Rydder køen for at undgå spam.
+tsched.critfail.footer=Hvis dette problem fortsætter med specifikke lydkilder, bedes du indsende en fejlrapport vha. /bug
+
+tsched.playnext.nowPlaying=Spiller nu: {1}
+tsched.playnext.playedBy=spillet af: {1}
+
+main.day={1} dag
+main.day.plural={1} dage
+main.hour={1} time
+main.hour.plural={1} timer
+main.minute={1} minut
+main.minute.plural={1} minutter
+main.second={1} sekund
+main.second.plural={1} sekunder
+
+main.success=Succes
+main.noPermission=Du har ikke tilladelse til at bruge denne kommando.
+main.ratelimit=Du kan ikke bruge denne kommando i {1} sekunder.
+main.botNoPermission=Jeg har ikke tilladelse til at læse eller sende beskeder i denne kanal.
+main.error=Fejl
+main.unknown=Ukendt
+main.channel=**Kanal**\n
+main.duration=**Varighed**\n
+main.update=Der skete en opdatering til botten, din kø og parametre er blevet gendannet!\nHvis du ønsker at se, hvad der er ændret, er du velkommen til at tilmelde dig supportserveren, der findes i bottens "Om mig".
+main.flag=🇩🇰
+main.languageName=dansk

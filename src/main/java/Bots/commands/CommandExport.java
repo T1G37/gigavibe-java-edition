@@ -1,7 +1,8 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 import Bots.lavaplayer.GuildMusicManager;
 import Bots.lavaplayer.PlayerManager;
 import com.sedmelluq.discord.lavaplayer.player.AudioPlayer;
@@ -12,40 +13,27 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 
-import static Bots.Main.createQuickError;
-import static Bots.Main.deleteFiles;
-
 public class CommandExport extends BaseCommand {
     @Override
-    public void execute(MessageEvent event) throws IOException {
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_BOT_IN_ANY_VC, Check.IS_PLAYING};
+    }
+
+    @Override
+    public void execute(CommandEvent event) throws IOException {
         final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(event.getGuild());
         final AudioPlayer audioPlayer = musicManager.audioPlayer;
-        if (!event.getGuild().getAudioManager().isConnected()) {
-            event.replyEmbeds(createQuickError("The bot is not in a VC."));
-            return;
-        }
-        if (audioPlayer.getPlayingTrack() == null) {
-            event.replyEmbeds(createQuickError("The bot is not playing anything."));
-            return;
-        }
-        String fileName = String.valueOf(System.currentTimeMillis());
-        File text = new File(fileName + ".txt");
+        String fileName = "temp/" + System.currentTimeMillis() + ".txt";
+        File text = new File(fileName);
         FileWriter writer = new FileWriter(text);
         writer.write(audioPlayer.getPlayingTrack().getInfo().uri + " | " + audioPlayer.getPlayingTrack().getInfo().title + "\n");
-        if (musicManager.scheduler.queue.size() > 0) {
+        if (!musicManager.scheduler.queue.isEmpty()) {
             for (AudioTrack track : musicManager.scheduler.queue) {
                 writer.write(track.getInfo().uri + " | " + track.getInfo().title + "\n");
             }
         }
-        try {
-            writer.flush();
-            writer.close();
-            event.replyFiles(FileUpload.fromData(text));
-            Thread.sleep(5000);
-            deleteFiles(fileName);
-        } catch (Exception e) {
-            e.fillInStackTrace();
-        }
+        writer.close();
+        event.replyFiles(FileUpload.fromData(text));
     }
 
     @Override
@@ -54,8 +42,8 @@ public class CommandExport extends BaseCommand {
     }
 
     @Override
-    public String getCategory() {
-        return Categories.Music.name();
+    public Category getCategory() {
+        return Category.Music;
     }
 
     @Override

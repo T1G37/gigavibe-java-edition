@@ -1,46 +1,28 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 import Bots.lavaplayer.GuildMusicManager;
 import Bots.lavaplayer.PlayerManager;
 import com.sedmelluq.discord.lavaplayer.track.AudioTrack;
-import net.dv8tion.jda.api.entities.GuildVoiceState;
-import net.dv8tion.jda.api.entities.Member;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Objects;
-
-import static Bots.Main.*;
 
 public class CommandShuffle extends BaseCommand {
     @Override
-    public void execute(MessageEvent event) {
-        if (!IsDJ(event.getGuild(), event.getChannel(), event.getMember())) {
-            return;
-        }
-        final Member self = event.getGuild().getSelfMember();
-        final GuildVoiceState selfVoiceState = self.getVoiceState();
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_DJ, Check.IS_IN_SAME_VC};
+    }
+
+    @Override
+    public void execute(CommandEvent event) {
         final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(event.getGuild());
         final List<AudioTrack> queue = new ArrayList<>(musicManager.scheduler.queue);
-        assert selfVoiceState != null;
-        if (!selfVoiceState.inAudioChannel()) {
-            event.replyEmbeds((createQuickError("Im not in a vc.")));
-            return;
-        }
-
-        final GuildVoiceState memberVoiceState = Objects.requireNonNull(event.getMember()).getVoiceState();
-
-        assert memberVoiceState != null;
-        if (!memberVoiceState.inAudioChannel()) {
-            event.replyEmbeds((createQuickError("You need to be in a voice channel to use this command.")));
-            return;
-        }
-
-        if (queue.size() == 0) {
-            event.replyEmbeds(createQuickError("There is nothing in the queue."));
+        if (queue.isEmpty()) {
+            event.replyEmbeds(event.createQuickError(event.localise("cmd.shuffle.emptyQueue")));
             return;
         }
 
@@ -49,7 +31,7 @@ public class CommandShuffle extends BaseCommand {
         for (AudioTrack audioTrack : queue) {
             musicManager.scheduler.queue(audioTrack.makeClone());
         }
-        event.replyEmbeds(createQuickEmbed("✅ **Success**", "Shuffled the queue!"));
+        event.replyEmbeds(event.createQuickSuccess(event.localise("cmd.shuffle.shuffled")));
     }
 
     @Override
@@ -58,13 +40,8 @@ public class CommandShuffle extends BaseCommand {
     }
 
     @Override
-    public String getCategory() {
-        return Categories.DJ.name();
-    }
-
-    @Override
-    public String getOptions() {
-        return "";
+    public Category getCategory() {
+        return Category.DJ;
     }
 
     @Override

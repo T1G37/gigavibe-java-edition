@@ -1,73 +1,62 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 import net.dv8tion.jda.api.utils.FileUpload;
 
 import java.io.*;
 import java.util.Objects;
 
-import static Bots.Main.createQuickError;
-
 public class CommandGetDump extends BaseCommand {
     @Override
-    public void execute(MessageEvent event) {
-        if (event.getUser().getIdLong() == 211789389401948160L || event.getUser().getIdLong() == 260016427900076033L) {
-            if (new File("log.txt").exists()) {
-                new File("log.txt").delete();
-            }
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_DEV};
+    }
+
+    @Override
+    public void execute(CommandEvent event) {
+        new File("temp/dump.txt").delete();
+        event.deferReply();
+        try {
+            Process p = Runtime.getRuntime().exec("jps");
+            BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+
+            String line;
             String PID = "";
-            try {
-                Process p = Runtime.getRuntime().exec("jps");
-                BufferedReader reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-
-                String line;
-                while ((line = reader.readLine()) != null) {
-                    String[] jpsOutputLine = line.split(" ");
-                    if (jpsOutputLine.length >= 2 && (jpsOutputLine[1].equals("bot") || jpsOutputLine[1].equals("bot.jar") || jpsOutputLine[1].equals("Main"))) {
-                        PID = jpsOutputLine[0];
-                    }
+            while ((line = reader.readLine()) != null) {
+                String[] jpsOutputLine = line.split(" ");
+                if (jpsOutputLine.length >= 2 && (jpsOutputLine[1].equals("bot") || jpsOutputLine[1].equals("bot.jar") || jpsOutputLine[1].equals("Main"))) {
+                    PID = jpsOutputLine[0];
                 }
-                reader.close();
-                if (Objects.equals(PID, "")) {
-                    event.replyEmbeds(createQuickError("Could not get dump as the process ID was not found."));
-                    return;
-                }
-                p = Runtime.getRuntime().exec("jstack " + PID);
-                reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                BufferedWriter writer = new BufferedWriter(new FileWriter("log.txt"));
-
-                while ((line = reader.readLine()) != null) {
-                    writer.write(line);
-                    writer.newLine();
-                }
-
-                writer.close();
-                reader.close();
-                p.waitFor();
-            } catch (Exception e) {
-                e.fillInStackTrace();
-                event.replyEmbeds(createQuickError("Could not get dump.\n```\n" + e.getMessage() + "\n```"));
             }
-            event.replyFiles(FileUpload.fromData(new File("log.txt")));
-            try {
-                Thread.sleep(10000);
-                new File("log.txt").delete();
-            } catch (Exception ignored) {
+            reader.close();
+            if (Objects.equals(PID, "")) {
+                event.replyEmbeds(event.createQuickError("Could not get dump as the process ID was not found."));
+                return;
             }
-        } else {
-            event.replyEmbeds(createQuickError("You do not have the permissions for this."));
+            p = Runtime.getRuntime().exec("jstack " + PID);
+            reader = new BufferedReader(new InputStreamReader(p.getInputStream()));
+            BufferedWriter writer = new BufferedWriter(new FileWriter("temp/dump.txt"));
+
+            while ((line = reader.readLine()) != null) {
+                writer.write(line);
+                writer.newLine();
+            }
+
+            writer.close();
+            reader.close();
+            p.waitFor();
+        } catch (Exception e) {
+            e.printStackTrace();
+            event.replyEmbeds(event.createQuickError("Could not get dump.\n```\n" + e.getMessage() + "\n```"));
         }
+        event.replyFiles(FileUpload.fromData(new File("temp/dump.txt")));
     }
 
     @Override
-    public String getCategory() {
-        return Categories.Dev.name();
-    }
-
-    @Override
-    public String getOptions() {
-        return "";
+    public Category getCategory() {
+        return Category.Dev;
     }
 
     @Override
@@ -80,8 +69,4 @@ public class CommandGetDump extends BaseCommand {
         return "Returns a dump of jstack.";
     }
 
-    @Override
-    public long getRatelimit() {
-        return 0;
-    }
 }

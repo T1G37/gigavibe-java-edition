@@ -2,37 +2,49 @@ package Bots;
 
 import net.dv8tion.jda.api.interactions.commands.build.SlashCommandData;
 
-/**
- * Custom base command class used by all commands
- *
- * @author 9382
- * @version 1.2
- */
+import static Bots.CommandStateChecker.*;
+
+// Custom base command class used by all commands
+// Structured in the recommended order of a command, ignoring the var and enum at the top
 public abstract class BaseCommand {
     public SlashCommandData slashCommand;
-    public static enum Categories {
-        General, Admin, DJ, Dev, Music
-    }
-
-    public abstract void execute(MessageEvent event) throws Exception; //The main event loop
 
     public void Init() { //Optional initialisation stuff if something is required on start for a command
     }
 
+    public Check[] getChecks() { //Common checks like IsDJ to make sure everything is fine
+        return new Check[0];
+    }
+
+    public abstract void execute(CommandEvent event) throws Exception; //The main event loop
+
+    public final void executeWithChecks(CommandEvent event) throws Exception { //For main - do not override
+        CheckResult checkResult = PerformChecks(event, this.getChecks());
+        if (!checkResult.succeeded()) {
+            event.replyEmbeds(Main.createQuickEmbed(event.localise("statecheck.notAllowed"), checkResult.getMessage()));
+        } else {
+            this.execute(event);
+        }
+    }
+
     public abstract String[] getNames(); //The first name in the list is treated as the primary name by cmds
 
-    public abstract String getCategory(); //The category, used by cmds
+    public abstract Category getCategory(); //The category, used by cmds
 
     public abstract String getDescription(); //The description, used by cmds
 
-    public String getOptions() {
+    public String getOptions() { //The options text used by help. Purely decorative
         return "";
-    } //The options text used by help / cmds. Purely decorative
+    }
 
     public void ProvideOptions(SlashCommandData slashCommand) { //Provides options for a slash command
     }
 
     public long getRatelimit() { //Ratelimit in milliseconds
         return 0;
+    }
+
+    public enum Category {
+        General, Music, DJ, Admin, Dev
     }
 }

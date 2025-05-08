@@ -1,29 +1,24 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
 
 import static Bots.Main.createQuickEmbed;
 
 public class CommandGithub extends BaseCommand {
     @Override
-    public void execute(MessageEvent event) {
-        event.replyEmbeds(createQuickEmbed(" ", "❕ Use this for bug reports and feature requests ONLY.\n\n❕ When making an issue, make sure to specify what the bug is and how to recreate it.\n\nhttps://github.com/ZeNyfh/gigavibe-java-edition"));
+    public void execute(CommandEvent event) {
+        event.replyEmbeds(createQuickEmbed(" ", event.localise("cmd.git.message")));
     }
 
     @Override
-    public String getCategory() {
-        return Categories.General.name();
+    public Category getCategory() {
+        return Category.General;
     }
 
     @Override
     public String[] getNames() {
         return new String[]{"github"};
-    }
-
-    @Override
-    public String getOptions() {
-        return "";
     }
 
     @Override

@@ -1,38 +1,32 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
-import net.dv8tion.jda.api.managers.AudioManager;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 
-import static Bots.Main.*;
+import static Bots.Main.LoopGuilds;
+import static Bots.Main.createQuickEmbed;
 
 public class CommandLoop extends BaseCommand {
+    @Override
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_IN_SAME_VC, Check.IS_PLAYING};
+    }
 
     @Override
-    public void execute(MessageEvent event) {
-        final AudioManager audioManager = event.getGuild().getAudioManager();
-        if (!audioManager.isConnected()) {
-            event.replyEmbeds(createQuickError("I am not playing anything."));
-            return;
-        }
-
-        if (LoopGuilds.contains(event.getGuild().getId())) {
-            event.replyEmbeds(createQuickEmbed("❌ \uD83D\uDD01", "No longer looping the current track."));
-            LoopGuilds.remove(event.getGuild().getId());
+    public void execute(CommandEvent event) {
+        if (LoopGuilds.contains(event.getGuild().getIdLong())) {
+            event.replyEmbeds(createQuickEmbed("❌ \uD83D\uDD01", event.localise("cmd.loop.notLooping")));
+            LoopGuilds.remove(event.getGuild().getIdLong());
         } else {
-            event.replyEmbeds(createQuickEmbed("✅ \uD83D\uDD01", "Looping the current track."));
-            LoopGuilds.add(event.getGuild().getId());
+            event.replyEmbeds(createQuickEmbed("✅ \uD83D\uDD01", event.localise("cmd.loop.looping")));
+            LoopGuilds.add(event.getGuild().getIdLong());
         }
     }
 
     @Override
-    public String getCategory() {
-        return Categories.Music.name();
-    }
-
-    @Override
-    public String getOptions() {
-        return "";
+    public Category getCategory() {
+        return Category.Music;
     }
 
     @Override

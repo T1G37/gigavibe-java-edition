@@ -1,62 +1,42 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
+import Bots.CommandStateChecker.Check;
 import Bots.lavaplayer.GuildMusicManager;
 import Bots.lavaplayer.PlayerManager;
-import net.dv8tion.jda.api.entities.GuildVoiceState;
-import net.dv8tion.jda.api.entities.Member;
 
-import java.util.Objects;
-
-import static Bots.Main.*;
+import static Bots.Main.skipCountGuilds;
 
 public class CommandClearQueue extends BaseCommand {
     @Override
-    public void execute(MessageEvent event) {
-        if (!IsDJ(event.getGuild(), event.getChannel(), event.getMember())) {
-            return;
-        }
-        final Member self = event.getGuild().getSelfMember();
-        final GuildVoiceState selfVoiceState = self.getVoiceState();
+    public Check[] getChecks() {
+        return new Check[]{Check.IS_DJ, Check.IS_IN_SAME_VC};
+    }
+
+    @Override
+    public void execute(CommandEvent event) {
         final GuildMusicManager musicManager = PlayerManager.getInstance().getMusicManager(event.getGuild());
-        final GuildVoiceState memberVoiceState = Objects.requireNonNull(event.getMember()).getVoiceState();
-        assert selfVoiceState != null;
-        if (!selfVoiceState.inAudioChannel()) {
-            event.replyEmbeds(createQuickError("Im not in a vc."));
+        if (musicManager.scheduler.queue.isEmpty() && musicManager.audioPlayer.getPlayingTrack() == null) {
+            event.replyEmbeds(event.createQuickError(event.localise("cmd.cq.empty")));
             return;
         }
 
-        assert memberVoiceState != null;
-        if (!memberVoiceState.inAudioChannel()) {
-            event.replyEmbeds(createQuickError("You need to be in a voice channel to use this command."));
-            return;
-        }
-
-        if (!Objects.equals(memberVoiceState.getChannel(), selfVoiceState.getChannel())) {
-            event.replyEmbeds(createQuickError("You need to be in the same voice channel to use this command."));
-            return;
-        }
-        clearVotes(event.getGuild().getIdLong());
+        skipCountGuilds.remove(event.getGuild().getIdLong());
         musicManager.scheduler.queue.clear();
         musicManager.scheduler.nextTrack();
         musicManager.audioPlayer.destroy();
-        event.replyEmbeds(createQuickEmbed("✅ **Success**", "Cleared the queue!"));
+        event.replyEmbeds(event.createQuickSuccess(event.localise("cmd.cq.cleared")));
     }
 
     @Override
     public String[] getNames() {
-        return new String[]{"clearqueue","clear queue", "queueclear", "queue clear", "clearq", "clear q"};
+        return new String[]{"clearqueue", "clear queue", "queueclear", "queue clear", "clearq", "clear q"};
     }
 
     @Override
-    public String getCategory() {
-        return Categories.DJ.name();
-    }
-
-    @Override
-    public String getOptions() {
-        return "";
+    public Category getCategory() {
+        return Category.DJ;
     }
 
     @Override

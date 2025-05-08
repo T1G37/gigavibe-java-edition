@@ -1,21 +1,23 @@
 package Bots.commands;
 
 import Bots.BaseCommand;
-import Bots.MessageEvent;
+import Bots.CommandEvent;
 
 import static java.lang.System.currentTimeMillis;
 
 public class CommandPing extends BaseCommand {
 
     @Override
-    public void execute(MessageEvent event) {
+    public void execute(CommandEvent event) {
         long time = currentTimeMillis();
-        event.reply(response -> response.editMessageFormat("ping: %dms", currentTimeMillis() - time), ".");
+        event.reply(response -> response.editMessageFormat(
+                event.localise("cmd.ping.ping", currentTimeMillis() - time) + "\n" +
+                        event.localise("cmd.ping.gatewayPing", event.getJDA().getGatewayPing())), ".");
     }
 
     @Override
-    public String getCategory() {
-        return Categories.General.name();
+    public Category getCategory() {
+        return Category.General;
     }
 
     @Override
@@ -30,6 +32,6 @@ public class CommandPing extends BaseCommand {
 
     @Override
     public long getRatelimit() {
-        return 5000;
+        return 1000;
     }
 }
